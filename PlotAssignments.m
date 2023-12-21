@@ -1,10 +1,9 @@
 
-function PlotAssignments(model, sol, figureID)
+function PlotAssignments(model, sol)
 
 % Set plotting parameters
-figure(figureID);
 
-offset = (model.XMAX - model.XMIN)/100; 
+offset = (model.WORLD.XMAX - model.WORLD.XMIN)/100; 
 
 Cmap   = colormap(lines);
 
@@ -13,11 +12,11 @@ linS = {'-','-.','--',':'};
 m_tasks = model.tasks;
 
 % Plot tasks
-hold on;
 for m = 1:length(m_tasks)
-    plot3(m_tasks(m).x + [0 0], m_tasks(m).y + [0 0], [m_tasks(m).start m_tasks(m).end],'square','color',Cmap(m_tasks(m).id,:),'LineWidth',10);
+    % plot3(m_tasks(m).x + [0 0], m_tasks(m).y + [0 0], [0 1],'square','color',Cmap(m_tasks(m).id,:),'LineWidth',10);
+    plot3(m_tasks(m).x + [0 0], m_tasks(m).y + [0 0], m_tasks(m).z + [0 0] ,'o','color','g','MarkerSize',7,'MarkerFaceColor','g');
     text(m_tasks(m).x+offset, m_tasks(m).y+offset, 0.1, ['T' num2str(m)]);
-    num_req = m_tasks(m).req;
+    % num_req = m_tasks(m).req;
     % text(m_tasks(m).x-offset, m_tasks(m).y-offset, 0.1, ['(' num2str(num_req) ')']);
 end
 
@@ -70,7 +69,6 @@ for n=1:length(model.agents)
 end
 
 % legend([agent_quad, agent_car, tasks_track, tasks_rescue], {'Quadrotors', 'Cars', 'Tracking tasks', 'Rescue tasks'}, 'Location', 'southwest');
-hold off;
 title('Agent Paths')
 xlabel('X');
 ylabel('Y');

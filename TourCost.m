@@ -22,6 +22,13 @@ function L=TourCost(ant,model)
         L1 = L1 + sqrt((startPos.x-task_end.x)^2+(startPos.y-task_end.y)^2+(startPos.z-task_end.z)^2);
     end
 
-    
-    L = L1;
+    % Cost for number of task assigned
+    L2 = 0;
+    for i = 1:n_agent
+        ntask = length(ant.agent(i).Tour); % number of tasks per agent
+
+        L2 = L2 - ntask;
+    end
+  
+    L = L1 + 150*L2;
 end

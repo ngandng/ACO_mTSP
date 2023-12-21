@@ -5,7 +5,7 @@ close all;
 
 %% Problem Definition
 
-loadVar = true;
+loadVar = false;
 
 if loadVar
     load("modelTest3.mat");
@@ -32,14 +32,14 @@ else
 end
 
 
-CostFunction = @(tour) TourCost(tour,model);
+CostFunction = @(tour,model) TourCost(tour,model);
 
 nVar = model.M;   % Searching dimension, number of tasks
 nAgent = model.N;
 
 %% ACO Parameters
 
-MaxIt = 300;      % Maximum Number of Iterations
+MaxIt = 1000;      % Maximum Number of Iterations
 
 nAnt = 50;        % Number of Ants (Population Size)
 
@@ -71,7 +71,7 @@ ant = repmat(empty_ant,nAnt,1);
 % Best Ant
 BestSol.Cost = inf;
 
-%% need to revise part
+%% Note: need to revise part
 % cost function
 % 
 
@@ -79,6 +79,35 @@ BestSol.Cost = inf;
 
 for it=1:MaxIt
     
+    % new task comes
+    nt = rand();
+    if nt < 0.01
+        % add new task
+        disp("Added new task");
+        n_id = length(model.tasks)+1;
+        new_task = CreateTask(n_id,it,model.WORLD);
+
+        model.tasks = [model.tasks new_task];
+        model.M = model.M+1;
+        
+        mean_tau = mean(tau, 'all');
+        var_tau = var(tau, 0, 'all');
+        for i=1:model.M
+            delta_x = model.tasks(i).x-new_task.x;
+            delta_y = model.tasks(i).y-new_task.y;
+            delta_z = model.tasks(i).z-new_task.z;
+
+            model.D(n_id,i) = sqrt(delta_x^2+delta_y^2+delta_z^2);
+            model.D(i,n_id) = model.D(n_id,i);
+
+            eta(n_id,i) = 1/model.D(n_id,i);
+            eta(i,n_id) = 1/model.D(i,n_id);
+
+            tau(n_id,i) = mean_tau+randn()*var_tau;
+            tau(i,n_id) = mean_tau+randn()*var_tau;
+        end
+    end
+
     % Move Ants, find solutions
     for k=1:nAnt
         assigned = [];
@@ -109,7 +138,7 @@ for it=1:MaxIt
             
         end 
         
-        ant(k).Cost=CostFunction(ant(k));
+        ant(k).Cost=CostFunction(ant(k),model);
         
         if ant(k).Cost<BestSol.Cost
             BestSol=ant(k);
@@ -146,15 +175,19 @@ for it=1:MaxIt
     
     % Show Iteration Information
     disp(['Iteration ' num2str(it) ': Best Cost = ' num2str(BestCost(it))]);
+
+    figure(1);
+    hold on;
+    PlotAssignments(model,BestSol);
+    hold off;
 end
 
 %% Results
-
-% stl = ReadSTLModel1();
-% PlotSTL(stl);
-PlotAssignments(model,BestSol,1);
+% figure(1);
+% hold on;
+% PlotAssignments(model,BestSol);
 % hold off;
-% 
+
 figure;
 plot(BestCost,'LineWidth',2);
 xlabel('Iteration');
