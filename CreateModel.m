@@ -49,7 +49,7 @@ function model = CreateModel()
             % agents(n).x    = rand(1)*(WORLD.XMAX - WORLD.XMIN) + WORLD.XMIN;
             % agents(n).y    = rand(1)*(WORLD.YMAX - WORLD.YMIN) + WORLD.YMIN;
             agents(n).x    = agents(n-1).x;
-            agents(n).y    = agents(n-1).y + 5;
+            agents(n).y    = agents(n-1).y + 25;
         end
     
         % Init remaining agent parameters

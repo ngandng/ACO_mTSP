@@ -6,40 +6,32 @@ close all;
 %% Problem Definition
 
 loadVar = false;
+currentTasks = [];
 
 if loadVar
-    load("modelTest3.mat");
-
-    D = zeros(model.M,model.M);  % distance between two vertex
-
-    for i=1:model.M-1
-        for j=i+1:model.M
-            delta_x = model.tasks(i).x-model.tasks(j).x;
-            delta_y = model.tasks(i).y-model.tasks(j).y;
-            delta_z = model.tasks(i).z-model.tasks(j).z;
-
-            D(i,j)=sqrt((delta_x)^2+(delta_y)^2+(delta_z)^2);
-            
-            D(j,i)=D(i,j);
-            
+    load("scenario1.mat");
+    
+    for i = 1:model.M
+        if model.tasks(i).tc ~= 0
+            break;
         end
+        currentTasks = [currentTasks model.tasks(i)];
     end
-
-    model.D = D;
 
 else
     model = CreateModel();
+    currentTasks = model.tasks;
 end
 
 
-CostFunction = @(tour,model) TourCost(tour,model);
+CostFunction = @(tour,env) TourCost(tour,env);
 
 nVar = model.M;   % Searching dimension, number of tasks
 nAgent = model.N;
 
 %% ACO Parameters
 
-MaxIt = 1000;      % Maximum Number of Iterations
+MaxIt = 700;      % Maximum Number of Iterations
 
 nAnt = 50;        % Number of Ants (Population Size)
 
@@ -59,7 +51,7 @@ eta = 1./model.D;             % Heuristic Information Matrix, 1/distance
 
 tau = tau0*ones(nVar,nVar);   % Phromone Matrix
 
-BestCost = zeros(MaxIt,1);    % Array to Hold Best Cost Values
+% BestCost = zeros(MaxIt,1);    % Array to Hold Best Cost Values
 
 % Empty Ant
 % empty_ant.agent = [];
@@ -68,30 +60,53 @@ empty_ant.Cost = [];
 % Ant Colony Matrix
 ant = repmat(empty_ant,nAnt,1);
 
-% Best Ant
-BestSol.Cost = inf;
-
-%% Note: need to revise part
-% cost function
-% 
+myFig = figure(3);
+video = VideoWriter('result2.avi','Motion JPEG AVI');
+video.FrameRate = 20;  % (frames per second) this number depends on the sampling time and the number of frames you have
+open(video);
 
 %% ACO Main Loop
 
 for it=1:MaxIt
     
+    if it == 1
+        BestSol(it).Cost = Inf;
+    else
+        BestSol(it).agent = BestSol(it-1).agent;
+        BestSol(it).Cost = CostFunction(BestSol(it),model);
+    end
+
     % new task comes
+    newtask = false;
+    
+    % % ======This is for random new task======
     nt = rand();
-    if nt < 0.01
+    if it > MaxIt-150
+        nt = 1;
+    end
+    if nt < 0.02
         % add new task
         disp("Added new task");
+        newtask = true;
+
         n_id = length(model.tasks)+1;
         new_task = CreateTask(n_id,it,model.WORLD);
 
         model.tasks = [model.tasks new_task];
         model.M = model.M+1;
-        
+
+    end
+
+    % % ========This is for new task from data=======
+    % %  write code here
+    
+    
+    % %  ======Update something when new tasks come======
+    if newtask 
+
         mean_tau = mean(tau, 'all');
         var_tau = var(tau, 0, 'all');
+
         for i=1:model.M
             delta_x = model.tasks(i).x-new_task.x;
             delta_y = model.tasks(i).y-new_task.y;
@@ -103,19 +118,29 @@ for it=1:MaxIt
             eta(n_id,i) = 1/model.D(n_id,i);
             eta(i,n_id) = 1/model.D(i,n_id);
 
-            tau(n_id,i) = mean_tau+randn()*var_tau;
-            tau(i,n_id) = mean_tau+randn()*var_tau;
+            tau(n_id,i) = tau0+randn()*var_tau;
+            tau(i,n_id) = tau0+randn()*var_tau;
         end
+        % Update nVar
+        nVar = model.M;
     end
+
 
     % Move Ants, find solutions
     for k=1:nAnt
         assigned = [];
 
-        for agn = 1:nAgent
-            ant(k).agent(agn).Tour = randi([1 nVar]); % get the random tasks for the first
-            assigned = [assigned ant(k).agent(agn).Tour];
-        % ant(k).Tour = 1;
+        % get a random tasks for the first
+        for agn = 1:nAgent  
+            check = false;
+            while ~check
+                ant(k).agent(agn).Tour = randi([1 nVar]); 
+                dupl = intersect(ant(k).agent(agn).Tour,assigned);
+                if isempty(dupl)
+                    check = true;
+                end
+            end
+            assigned = [assigned, ant(k).agent(agn).Tour];
         end
 
         for l=1:nVar    % finish assigning when all of task are assigned
@@ -131,7 +156,7 @@ for it=1:MaxIt
                 
                 j=RouletteWheelSelection(P);
                 
-                assigned = [assigned j];
+                assigned = [assigned, j];
 
                 ant(k).agent(ag).Tour=[ant(k).agent(ag).Tour j];
             end
@@ -140,8 +165,9 @@ for it=1:MaxIt
         
         ant(k).Cost=CostFunction(ant(k),model);
         
-        if ant(k).Cost<BestSol.Cost
-            BestSol=ant(k);
+        if ant(k).Cost<BestSol(it).Cost
+            BestSol(it).agent = ant(k).agent;
+            BestSol(it).Cost = ant(k).Cost;
         end
         
     end
@@ -170,26 +196,32 @@ for it=1:MaxIt
     % Evaporation
     tau=(1-rho)*tau;
     
-    % Store Best Cost
-    BestCost(it)=BestSol.Cost;
+    % % Store Best Cost
+    % BestCost(it)=BestSol.Cost;
     
-    % Show Iteration Information
-    disp(['Iteration ' num2str(it) ': Best Cost = ' num2str(BestCost(it))]);
+    assignedTask = 0;
+    for ag = 1:model.N
+        assignedTask = assignedTask + length(BestSol(it).agent(ag).Tour);
+    end
 
-    figure(1);
-    hold on;
-    PlotAssignments(model,BestSol);
-    hold off;
+    % Show Iteration Information
+    disp(['Iteration ' num2str(it) ': Best Cost = ' num2str(BestSol(it).Cost) ', model.M ' num2str(model.M), ', assigned ' num2str(assignedTask)]);
+
+    % plot
+    PlotAssignments(model,BestSol(it));
+    Frame = getframe(myFig);
+    writeVideo(video,Frame);
+
 end
 
-%% Results
-% figure(1);
-% hold on;
-% PlotAssignments(model,BestSol);
-% hold off;
+% Results
+figure();
+PlotAssignments(model,BestSol(end));
+close(video);
+
 
 figure;
-plot(BestCost,'LineWidth',2);
+plot(BestSol(:).Cost,'LineWidth',2);
 xlabel('Iteration');
 ylabel('Best Cost');
 grid on;

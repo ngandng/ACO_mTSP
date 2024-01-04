@@ -12,6 +12,9 @@ linS = {'-','-.','--',':'};
 m_tasks = model.tasks;
 
 % Plot tasks
+cla;
+hold on;
+
 for m = 1:length(m_tasks)
     % plot3(m_tasks(m).x + [0 0], m_tasks(m).y + [0 0], [0 1],'square','color',Cmap(m_tasks(m).id,:),'LineWidth',10);
     plot3(m_tasks(m).x + [0 0], m_tasks(m).y + [0 0], m_tasks(m).z + [0 0] ,'o','color','g','MarkerSize',7,'MarkerFaceColor','g');
@@ -36,7 +39,7 @@ for n=1:length(model.agents)
         Y = [model.agents(n).y, taskPrev.y];
         Z = zeros(length(X));
 
-        plot3(X,Y,Z,'linestyle',linS(n),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
+        plot3(X,Y,Z,'linestyle',linS(1),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
 
         % plot3(X(end)+[0 0], Y(end)+[0 0], Z(end)+[0 0], '^','color',Cmap(model.agents(n).id,:),'MarkerSize',10,'MarkerFaceColor',Cmap(model.tasks(n).id+5,:));
         text(model.agents(n).x+offset, model.agents(n).y+offset, 0.1, ['A' num2str(n)]);
@@ -49,7 +52,7 @@ for n=1:length(model.agents)
                 Y = [taskPrev.y, taskNext.y];
                 Z = zeros(length(X));
 
-                plot3(X,Y,Z,'linestyle',linS(n),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
+                plot3(X,Y,Z,'linestyle',linS(1),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
 
                 % plot3(X(end)+[0 0], Y(end)+[0 0], Z(end)+[0 0], '^','color',Cmap(model.agents(n).id,:),'MarkerSize',10,'MarkerFaceColor',Cmap(model.tasks(n).id+5,:));
 
@@ -64,7 +67,7 @@ for n=1:length(model.agents)
         Y = [taskPrev.y, model.agents(n).y];
         Z = zeros(length(X));
 
-        plot3(X,Y,Z,'linestyle',linS(n),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
+        plot3(X,Y,Z,'linestyle',linS(1),'color',Cmap(model.agents(n).id,:),'LineWidth',2);
     end
 end
 
@@ -74,7 +77,7 @@ xlabel('X');
 ylabel('Y');
 zlabel('Time');
 grid on;
-
+hold off;
 return
 
 function task = lookupTask(tasks, taskID)
