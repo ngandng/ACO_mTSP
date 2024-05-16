@@ -1,4 +1,5 @@
 
+import os
 import numpy as np
 import concurrent.futures
 import random
@@ -25,7 +26,15 @@ def read_txt_file(filename):
     demand_section = False
     depot_section = False
 
-    with open(filename, 'r') as file:
+
+    current_path = os.path.dirname(__file__) 
+
+    # Navigate up one level to the project root folder
+    project_root = os.path.abspath(os.path.join(current_path, '..'))
+    # Construct the path to the file you want to read
+    file_path = os.path.join(project_root, 'test_instance', filename)
+
+    with open(file_path, 'r') as file:
         lines = file.readlines()
         for line in lines:
             if line.startswith('CAPACITY'):
@@ -242,31 +251,9 @@ def print_bestsol(sol,best_num_vehicle,best_dmlist,best_cost,data):
     print('Demand list: ',best_dmlist)
     print('Best cost = ',best_cost)
 
-    
 
+def aco_search(searching_data, maxIt):  
 
-def main_alg(filename, maxIt):                     # filename: txt, input of tasks; C: capacity of robots             
-    
-    # process the information of input file, generate the problem input
-    input_data = read_txt_file(filename)
-
-    print('Number of depot = ',input_data["num_depot"])
-    # depots = input_data["vertices"][:input_data["num_depot"]]
-    # print('Depots size ',input_data["num_depot"])
-    # tasks = input_data["vertices"][input_data["num_depot"]:]
-    print('Tasks size ',len(input_data["vertices"])-input_data["num_depot"])
-
-    N = len(input_data["vertices"])
-
-    print('N = ',N)
-    # print('Size of vertices ', input_data["vertices"].shape)
-    # print('Check vertices vector ',input_data["vertices"])
-
-    for i in range(N):
-        print(f'Vertice: {input_data["vertices"][i][0]}, coordination: x = {input_data["vertices"][i][1]}, y = {input_data["vertices"][i][2]}, demand = {input_data["demand"][i]}')
-
-    searching_data = cal_searching_data(input_data)
-    # print("check",searching_data["depot"])
     # ACO parameters
     nAnt = 10
     Q = 1           # pheromone quantity parameter
@@ -344,8 +331,26 @@ def main_alg(filename, maxIt):                     # filename: txt, input of tas
     return best_sol, best_num_vehicle, best_cost
         
 if __name__=="__main__":
+
     files = ['P-n22-k8.txt','P-n23-k8.txt','P-n45-k5.txt','P-n50-k8.txt','P-n55-k8.txt','P-n60-k15.txt','P-n65-k10.txt',
              'X-n115-k10.txt', 'X-n200-k36.txt', 'X-n351-k40.txt', 'X-n480-k70.txt', 'X-n701-k44.txt']
     filename = files[7]
+
     maxIt = 500
-    sol,num_veh,cost = main_alg(filename,maxIt)
+
+    # process the information of input file, generate the problem input
+    input_data = read_txt_file(filename)
+
+    print('Number of depot = ',input_data["num_depot"])
+    print('Tasks size ',len(input_data["vertices"])-input_data["num_depot"])
+
+    N = len(input_data["vertices"])
+
+    print('N = ',N)
+
+    for i in range(N):
+        print(f'Vertice: {input_data["vertices"][i][0]}, coordination: x = {input_data["vertices"][i][1]}, y = {input_data["vertices"][i][2]}, demand = {input_data["demand"][i]}')
+
+    searching_data = cal_searching_data(input_data)
+
+    sol,num_veh,cost = aco_search(searching_data,maxIt)
